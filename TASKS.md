@@ -79,7 +79,12 @@ User has chosen to go **one task at a time, in order** — not parallelizing acr
 
 1. ✅ ~~Kaggle account setup~~ — done 2026-09-15
 2. ✅ ~~Colab account verification~~ — done 2026-09-15
-3. ⏳ **Real data downloads** (Phase 1): VAERS → FAERS → PMC case reports → CADEC/ADE-Corpus-V2 → hand-curated CIOMS examples — up next
+3. ⏳ **Real data downloads** (Phase 1) — **IN PROGRESS, resume here**:
+   - ✅ VAERS (2025, ~40,800 narratives) — done
+   - ✅ FAERS (1000 records via API) — done
+   - ⏳ **PMC open-access case reports — next up, not started**
+   - ⏳ CADEC / ADE-Corpus-V2 — not started
+   - ⏳ Hand-curated CIOMS/ICH E2B examples (20-30) — not started
 4. Distillation pipeline (Phase 2)
 5. Zero-shot baseline eval (Phase 2.5)
 6. First fine-tune: extraction + narrative writing (Phase 3)
