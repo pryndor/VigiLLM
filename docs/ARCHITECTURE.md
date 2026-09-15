@@ -1,5 +1,15 @@
 # Architecture
 
+## Rules vs. fine-tuning — which parts need which
+
+Not every task needs a modified model. This project deliberately splits work three ways:
+
+1. **Pure rule engine, no model at all** — seriousness criteria, reportability timeline, minimum-criteria validation. Regulatory logic, not reasoning; hard-coded Python, editable by anyone without retraining.
+2. **Existing LLM + retrieval, no fine-tuning** — MedDRA coding. Embedding search over real terms + the base instruct model reranking candidates; the base model's out-of-the-box instruction-following is enough here since it's just picking from a shortlist, not generating from memory.
+3. **Fine-tuned (LoRA) LLM** — narrative extraction, narrative writing, causality judgment. These need actual weight-level training because a stock instruct model won't reliably hit your exact JSON schema or reason like WHO-UMC causality consistently enough zero-shot. LoRA trains a small adapter on top of the frozen base — the base model itself is never modified, only a separate adapter file is.
+
+Before committing Kaggle/Colab quota to category 3, run the zero-shot baseline check in `ROADMAP.md` Phase 2.5 — prompt the untrained base model on the same tasks first, see how much fine-tuning actually buys over prompting alone.
+
 ## Design principle
 
 One backbone model, one multi-task LoRA adapter, task-prefixed instructions. Not four separate fine-tunes. Reasons:

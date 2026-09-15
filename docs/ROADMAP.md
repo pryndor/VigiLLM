@@ -31,6 +31,18 @@ Each phase has a concrete, checkable exit condition. Don't start the next phase 
 
 **Exit condition**: a reviewed, quality-filtered multi-task training dataset exists on HF Hub.
 
+## Phase 2.5 — Zero-shot baseline (no training, do this before committing to Phase 3)
+
+Before spending Kaggle/Colab quota on fine-tuning, measure how far prompting alone gets. Run BioMistral-7B / Qwen2.5-7B-Instruct as-is (no LoRA) against a held-out sample of Phase 1's real-data anchors, with a well-written instruction prompt containing the schema — no training, just inference.
+
+- [ ] Prompt the untrained backbone on extraction task, score field-level F1 against the same held-out set Phase 3 will use
+- [ ] Prompt on narrative-writing task, get a rough human quality read
+- [ ] Record baseline numbers in the same tracking format as `TRAINING_PLAN.md`'s eval gates
+
+**Why this matters**: if zero-shot already clears a meaningful fraction of the Phase 3 gate (0.80 F1), fine-tuning has a concrete bar to beat and you'll know quickly whether LoRA training is earning its compute cost. If zero-shot is near 0, that confirms fine-tuning is actually necessary rather than assumed — either way, this is a half-day check against zero training cost, worth doing before Phase 3's real investment.
+
+**Exit condition**: baseline numbers recorded, team has a documented reason fine-tuning is worth proceeding to.
+
 ## Phase 3 — First fine-tune: extraction + narrative writing only
 
 Start with just the two inverse tasks (extraction and narrative writing) before adding MedDRA coding or causality — smallest scope that produces a demoable result.
