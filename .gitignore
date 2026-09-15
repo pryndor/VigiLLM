@@ -6,6 +6,8 @@ checkpoint*/
 merged_model/
 *.gguf
 data/*.jsonl
+data/**/*.jsonl
+data/raw/
 !data/.gitkeep
 wandb/
 .ipynb_checkpoints/
