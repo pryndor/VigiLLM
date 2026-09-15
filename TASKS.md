@@ -31,8 +31,8 @@ Plain checklist of what's actually done vs not, as of 2026-09-15. Cross-referenc
 | `scripts/build_meddra_index.py` written | ✅ Done |
 | MedDRA index tested against live openFDA API | ✅ Done — 300-term test index, retrieval quality confirmed on 3 realistic queries |
 | Known gap documented: openFDA caps at 1000 terms/request | ✅ Documented in `docs/DATA_SOURCES.md` |
-| Real data downloaded: VAERS narratives | ❌ Not done |
-| Real data downloaded: FAERS bulk/API extracts | ❌ Not done (only the small 300-term MedDRA test pull, not full FAERS case data) |
+| Real data downloaded: VAERS narratives | ✅ Done — 2025VAERSData.zip, ~40,800 real case narratives extracted to `data/raw/` (CAPTCHA-gated bulk download, user did it manually) |
+| Real data downloaded: FAERS bulk/API extracts | ✅ Done — 1000 real ICSR records via `scripts/download_faers_sample.py` (openFDA API, no CAPTCHA), 454 serious, 87 fatal, 2749 reaction terms |
 | Real data downloaded: PMC open-access case reports | ❌ Not done |
 | Real data downloaded: CADEC / ADE-Corpus-V2 | ❌ Not done |
 | Hand-curated CIOMS/ICH E2B example cases (20-30) | ❌ Not done |
