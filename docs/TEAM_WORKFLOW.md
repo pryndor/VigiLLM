@@ -9,6 +9,12 @@
 | HuggingFace Hub | Whoever just finished a training turn | Push updated checkpoint/dataset |
 | Weights & Biases | Automatic during training | Shared experiment dashboard, everyone can view |
 
+## Actual accounts/repos (2026-09-15)
+
+- **GitHub**: github.com/pryndor/VigiLLM (private)
+- **HuggingFace**: personal namespace `Pryndor`, not an org — `Pryndor/vigillm-adapter` (checkpoints) and `Pryndor/vigillm-dataset` (training data), both private. Skipped creating an HF org since it's browser-only (no CLI path) and adds friction without real benefit for a small team — HF supports adding collaborators directly to individual repos, which covers the same need. Team members get added as repo-level collaborators (repo Settings → Collaborators) rather than org members.
+- **W&B**: project at wandb.ai/balathepharmacist-drugvigil/vigillm
+
 ## Compute pooling
 
 Each team member has their own free Kaggle account (30hr/week GPU quota each) and free Colab account (overflow). A 4-person team has 120hr/week pooled Kaggle time without spending anything — just coordinate whose turn it is.

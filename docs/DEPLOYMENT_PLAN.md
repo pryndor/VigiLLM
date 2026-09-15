@@ -26,7 +26,7 @@ python llama.cpp/convert_hf_to_gguf.py ./merged_model --outfile vigillm.gguf --o
 
 ## Step 3: Push GGUF to HuggingFace Hub
 
-Same private org repo used for checkpoints, or a separate `org/vigillm-gguf` repo — keep raw adapter checkpoints and final quantized releases separate so team members pulling for inference don't need to download training-only checkpoint metadata.
+Same private org repo used for checkpoints, or a separate `Pryndor/vigillm-gguf` repo — keep raw adapter checkpoints and final quantized releases separate so team members pulling for inference don't need to download training-only checkpoint metadata.
 
 ## Step 4: Local deployment per team member (Ollama)
 

@@ -5,7 +5,7 @@
 1. `schema/case_schema.json` locked (already in repo)
 2. `data/distilled_training_set.jsonl` built per [`DISTILLATION_PLAN.md`](DISTILLATION_PLAN.md)
 3. Real-data anchors (FAERS/VAERS extracts, hand-curated CIOMS examples) merged in
-4. HuggingFace Hub private repo created for checkpoints (`org/vigillm-adapter`)
+4. HuggingFace Hub private repo created for checkpoints (`Pryndor/vigillm-adapter`)
 5. Weights & Biases project created, shared with team
 
 ## Method: QLoRA fine-tuning
@@ -21,7 +21,7 @@
 git pull
 
 # 2. Pull latest checkpoint (skip on very first run)
-huggingface-cli download org/vigillm-adapter --local-dir ./checkpoint
+hf download Pryndor/vigillm-adapter --local-dir ./checkpoint
 
 # 3. Train for the session's time budget
 python scripts/train.py \
@@ -33,7 +33,7 @@ python scripts/train.py \
   --report_to wandb
 
 # 4. Push updated checkpoint
-huggingface-cli upload org/vigillm-adapter ./checkpoint_new
+hf upload Pryndor/vigillm-adapter ./checkpoint_new
 
 # 5. Mark turn complete on the team's shared tracking board (see TEAM_WORKFLOW.md)
 ```
