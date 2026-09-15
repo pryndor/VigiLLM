@@ -27,29 +27,21 @@ OPENFDA_EVENT_URL = "https://api.fda.gov/drug/event.json"
 MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
 
 
+OPENFDA_COUNT_MAX = 1000  # openFDA's aggregation ("count") queries don't support skip/pagination —
+                          # a single request returns up to this many most-frequent terms
+
+
 def fetch_terms_from_openfda(limit: int) -> list[str]:
-    """Pull distinct reaction.meddrapt values from openFDA's public FAERS endpoint."""
-    terms: set[str] = set()
-    skip = 0
-    page_size = 100
-    while len(terms) < limit:
-        params = {
-            "search": "patient.reaction.reactionmeddrapt:*",
-            "count": "patient.reaction.reactionmeddrapt.exact",
-            "limit": page_size,
-            "skip": skip,
-        }
-        resp = requests.get(OPENFDA_EVENT_URL, params=params, timeout=30)
-        resp.raise_for_status()
-        results = resp.json().get("results", [])
-        if not results:
-            break
-        for r in results:
-            terms.add(r["term"])
-        skip += page_size
-        if len(results) < page_size:
-            break
-    return sorted(terms)[:limit]
+    """Pull the most-frequent reaction.meddrapt values from openFDA's public FAERS endpoint."""
+    params = {
+        "search": "patient.reaction.reactionmeddrapt:*",
+        "count": "patient.reaction.reactionmeddrapt.exact",
+        "limit": min(limit, OPENFDA_COUNT_MAX),
+    }
+    resp = requests.get(OPENFDA_EVENT_URL, params=params, timeout=30)
+    resp.raise_for_status()
+    results = resp.json().get("results", [])
+    return sorted(r["term"] for r in results)
 
 
 def load_terms_from_file(path: str) -> list[tuple[str, str | None]]:
