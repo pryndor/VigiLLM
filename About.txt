@@ -1,0 +1,17 @@
+VigiLLM
+=======
+
+Zero-cost, team-trainable open-source LLM for pharmacovigilance case processing:
+MedDRA coding, case narrative extraction (structured data from free text),
+case assessment (causality/seriousness/reportability), and narrative writing.
+
+Approach: multi-teacher distillation (BioMistral-7B + OpenBioLLM-8B knowledge)
+into a single Apache-2.0-licensed backbone (BioMistral-7B or Qwen2.5-7B),
+fine-tuned via QLoRA on free GPU compute (Kaggle/Colab), trained collaboratively
+by multiple team members using GitHub + HuggingFace Hub + Weights & Biases.
+
+Deployed locally per-member via Ollama (GGUF), or demoed via free HF Spaces.
+
+Status: planning/scaffolding stage, no training run yet.
+
+See docs/ for full architecture, training plan, deployment plan, and team workflow.

@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+.env
+checkpoint*/
+merged_model/
+*.gguf
+data/*.jsonl
+!data/.gitkeep
+wandb/
+.ipynb_checkpoints/

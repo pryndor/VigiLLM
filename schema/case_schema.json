@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VigiLLM Case Data Schema",
+  "description": "Locked structured-data schema for all four VigiLLM tasks (extraction, MedDRA coding, case assessment, narrative writing). Do not change fields after training data generation has started without regenerating affected training data — see docs/ROADMAP.md Phase 0.",
+  "type": "object",
+  "properties": {
+    "case_metadata": {
+      "type": "object",
+      "description": "Intake/lifecycle fields matching real ICSR case receipt — see docs/CASE_PROCESSING_WORKFLOW.md",
+      "properties": {
+        "report_id": { "type": ["string", "null"] },
+        "source_type": {
+          "type": "string",
+          "enum": ["spontaneous", "literature", "clinical_trial", "solicited_pss", "regulatory_authority", "unknown"]
+        },
+        "reporter_type": {
+          "type": "string",
+          "enum": ["physician", "pharmacist", "nurse", "other_hcp", "consumer", "lawyer", "unknown"]
+        },
+        "receipt_date": { "type": ["string", "null"] },
+        "country": { "type": ["string", "null"] },
+        "minimum_criteria_met": {
+          "type": "object",
+          "description": "The 4 ICH minimum criteria for a valid ICSR",
+          "properties": {
+            "identifiable_patient": { "type": "boolean" },
+            "identifiable_reporter": { "type": "boolean" },
+            "suspect_drug": { "type": "boolean" },
+            "adverse_event": { "type": "boolean" }
+          }
+        },
+        "duplicate_check_status": {
+          "type": "string",
+          "enum": ["not_checked", "no_duplicate_found", "possible_duplicate", "confirmed_duplicate"]
+        },
+        "follow_up_status": {
+          "type": "string",
+          "enum": ["not_required", "requested", "received", "closed_no_response"]
+        },
+        "follow_up_requested_info": { "type": ["string", "null"] }
+      },
+      "required": ["source_type", "reporter_type"]
+    },
+    "patient": {
+      "type": "object",
+      "properties": {
+        "age": { "type": ["string", "number", "null"] },
+        "age_unit": { "type": "string", "enum": ["years", "months", "days", "unknown"] },
+        "sex": { "type": "string", "enum": ["male", "female", "unknown"] },
+        "weight_kg": { "type": ["number", "null"] }
+      },
+      "required": ["age", "sex"]
+    },
+    "medical_history": {
+      "type": "array",
+      "description": "Pre-existing conditions, resolved before the case's index event",
+      "items": {
+        "type": "object",
+        "properties": {
+          "condition": { "type": "string" },
+          "start_date": { "type": ["string", "null"] },
+          "end_date": { "type": ["string", "null"] },
+          "notes": { "type": ["string", "null"] }
+        },
+        "required": ["condition"]
+      }
+    },
+    "current_conditions": {
+      "type": "array",
+      "description": "Ongoing conditions at time of the adverse event, distinct from medical_history",
+      "items": {
+        "type": "object",
+        "properties": {
+          "condition": { "type": "string" },
+          "start_date": { "type": ["string", "null"] },
+          "notes": { "type": ["string", "null"] }
+        },
+        "required": ["condition"]
+      }
+    },
+    "concomitant_medications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "dose": { "type": ["string", "null"] },
+          "route": { "type": ["string", "null"] },
+          "indication": { "type": ["string", "null"] },
+          "start_date": { "type": ["string", "null"] },
+          "stop_date": { "type": ["string", "null"] }
+        },
+        "required": ["name"]
+      }
+    },
+    "suspect_drugs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "dose": { "type": ["string", "null"] },
+          "route": { "type": ["string", "null"] },
+          "indication": { "type": ["string", "null"] },
+          "start_date": { "type": ["string", "null"] },
+          "stop_date": { "type": ["string", "null"] },
+          "batch_number": { "type": ["string", "null"] }
+        },
+        "required": ["name"]
+      }
+    },
+    "adverse_events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "term": { "type": "string", "description": "verbatim or extracted event description" },
+          "meddra_pt": { "type": ["string", "null"] },
+          "meddra_llt": { "type": ["string", "null"] },
+          "meddra_hlt": { "type": ["string", "null"] },
+          "meddra_soc": { "type": ["string", "null"] },
+          "onset_date": { "type": ["string", "null"] },
+          "resolution_date": { "type": ["string", "null"] },
+          "outcome": {
+            "type": "string",
+            "enum": ["recovered", "recovering", "not_recovered", "recovered_with_sequelae", "fatal", "unknown"]
+          },
+          "seriousness_criteria": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["death", "life_threatening", "hospitalization", "disability", "congenital_anomaly", "other_medically_important"]
+            }
+          }
+        },
+        "required": ["term"]
+      }
+    },
+    "rechallenge": { "type": "string", "enum": ["positive", "negative", "not_done", "unknown"] },
+    "dechallenge": { "type": "string", "enum": ["positive", "negative", "not_done", "unknown"] },
+    "causality_assessment": {
+      "type": ["object", "null"],
+      "description": "Null until Phase 5 (case assessment) fills this in — see docs/ROADMAP.md",
+      "properties": {
+        "method": { "type": "string", "enum": ["WHO-UMC", "Naranjo"] },
+        "result": {
+          "type": "string",
+          "enum": ["certain", "probable", "possible", "unlikely", "conditional", "unassessable"]
+        },
+        "reasoning": { "type": ["string", "null"] }
+      }
+    },
+    "reportability": {
+      "type": ["object", "null"],
+      "description": "Null until Phase 5 (rule engine) fills this in — see docs/ROADMAP.md",
+      "properties": {
+        "expedited": { "type": "boolean" },
+        "timeline_days": { "type": ["number", "null"] },
+        "jurisdiction": { "type": ["string", "null"] }
+      }
+    },
+    "narrative_text": {
+      "type": ["string", "null"],
+      "description": "Free-text narrative — either the source text (for extraction task) or the generated output (for narrative-writing task)"
+    }
+  },
+  "required": ["case_metadata", "patient", "adverse_events"]
+}
