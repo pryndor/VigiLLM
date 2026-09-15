@@ -52,7 +52,7 @@ Full detail: [`docs/TEAM_WORKFLOW.md`](docs/TEAM_WORKFLOW.md)
 
 ## Status
 
-Planning stage. No training run yet. Start here: [`docs/ROADMAP.md`](docs/ROADMAP.md) Phase 0.
+See [`TASKS.md`](TASKS.md) for the current done/not-done checklist. Short version: Phase 0 infra (GitHub/HF/W&B/local env) is complete; Kaggle account setup and Phase 1 real-data pulls are the next blockers before any training can start.
 
 ## License note
 
