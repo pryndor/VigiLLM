@@ -14,7 +14,7 @@ Plain checklist of what's actually done vs not, as of 2026-09-15. Cross-referenc
 | Weights & Biases account authenticated | ✅ Done — entity `balathepharmacist-drugvigil` |
 | W&B project created | ✅ Done — `vigillm` project live |
 | **Kaggle account created + phone-verified** | ✅ Done — user confirmed 2026-09-15 |
-| Colab account verified (overflow compute) | ❌ Not done |
+| Colab account verified (overflow compute) | ✅ Done — user confirmed 2026-09-15 |
 | Local dev environment (venv + dependencies) | ✅ Done — `venv/` has full `requirements.txt` stack installed and tested |
 | Ollama installed + running locally | ✅ Done — running as background process |
 | Candidate backbone models pulled locally for testing | ✅ Done — `qwen2.5:7b-instruct` and `cniongolo/biomistral`, both tested |
@@ -78,8 +78,8 @@ User has chosen to go **one task at a time, in order** — not parallelizing acr
 ## Current task queue (in order)
 
 1. ✅ ~~Kaggle account setup~~ — done 2026-09-15
-2. ⏳ **Colab account verification** (overflow compute) — up next
-3. Real data downloads (Phase 1): VAERS → FAERS → PMC case reports → CADEC/ADE-Corpus-V2 → hand-curated CIOMS examples
+2. ✅ ~~Colab account verification~~ — done 2026-09-15
+3. ⏳ **Real data downloads** (Phase 1): VAERS → FAERS → PMC case reports → CADEC/ADE-Corpus-V2 → hand-curated CIOMS examples — up next
 4. Distillation pipeline (Phase 2)
 5. Zero-shot baseline eval (Phase 2.5)
 6. First fine-tune: extraction + narrative writing (Phase 3)
