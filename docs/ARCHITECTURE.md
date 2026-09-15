@@ -24,6 +24,8 @@ One backbone model, one multi-task LoRA adapter, task-prefixed instructions. Not
 
 Chosen over Qwen2.5-7B-Instruct because it already carries medical vocabulary before any task fine-tuning starts — less training needed to get baseline medical fluency. Qwen2.5-7B-Instruct is the fallback if BioMistral's instruction-following proves too weak after testing (BioMistral is a base/continued-pretrain model, not instruction-tuned — may need an extra instruction-tuning pass first, see [`DISTILLATION_PLAN.md`](DISTILLATION_PLAN.md)).
 
+**Tested 2026-09-15** (local Ollama, `cniongolo/biomistral`): confirmed working but instruction-following is weak/rambling on a direct question ("What is WHO-UMC causality assessment?" got a meandering, imprecise answer) versus Qwen2.5-7B-Instruct's clean direct response to a similar test. This is exactly the gap predicted above — real evidence BioMistral likely needs an instruction-tuning pass, or that Qwen2.5-7B-Instruct may end up the better backbone in practice. Phase 2.5's zero-shot baseline should test both and decide with real numbers, not assumption.
+
 ## The four tasks, and why each is handled differently
 
 ### 1. Narrative extraction (text → structured JSON)

@@ -2,6 +2,10 @@
 
 All steps zero cost. No always-on server required.
 
+## Tested finding (2026-09-15): BioMistral is not on Ollama's public registry
+
+`ollama pull biomistral` (and `biomistral:7b`, `biomistral:latest`, `biomistral/biomistral`) all fail with "pull model manifest: file does not exist" — confirmed directly, not assumed. This doesn't block anything: the merge→GGUF→`ollama create` path below never depended on Ollama's registry having BioMistral pre-listed, since we convert our own trained/merged model ourselves. It just means anyone wanting to test *stock* BioMistral locally via Ollama before fine-tuning needs to download it from HuggingFace and convert to GGUF manually first — there's no one-line `ollama pull` shortcut for the untrained base model. For quick local testing (e.g. the Phase 2.5 zero-shot baseline) without that conversion step, `ollama pull qwen2.5:7b-instruct` works directly — it's the documented fallback backbone and is officially on Ollama's registry.
+
 ## Step 1: Merge LoRA into base
 
 ```bash
