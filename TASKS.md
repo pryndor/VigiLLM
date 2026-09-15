@@ -71,6 +71,19 @@ All ❌ **not started** — blocked on Phase 0's Kaggle setup and Phase 1's real
 | `schema/case_schema.json` | ✅ Done, locked |
 | This file (`TASKS.md`) | ✅ Done |
 
-## Immediate next actionable step
+## Working method
 
-**Kaggle account setup** is the actual blocker for everything past Phase 1 — no training can happen without it. Recommend doing that next, in parallel with Phase 1's real-data downloads (which need no account at all and can start immediately).
+User has chosen to go **one task at a time, in order** — not parallelizing across tasks. Update this file's status after each task closes before starting the next one, so it always reflects exactly where things stand.
+
+## Current task queue (in order)
+
+1. ⏳ **Kaggle account setup** (create account + phone-verify for GPU access) — up next, browser-only, needs user action
+2. Colab account verification (overflow compute)
+3. Real data downloads (Phase 1): VAERS → FAERS → PMC case reports → CADEC/ADE-Corpus-V2 → hand-curated CIOMS examples
+4. Distillation pipeline (Phase 2)
+5. Zero-shot baseline eval (Phase 2.5)
+6. First fine-tune: extraction + narrative writing (Phase 3)
+7. MedDRA coding integration (Phase 4)
+8. Case assessment: causality + rule engine (Phase 5)
+9. Deployment (Phase 6)
+10. Team invites + integration (Phase 7, whenever user is ready to bring others in)
