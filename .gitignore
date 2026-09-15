@@ -11,3 +11,4 @@ data/raw/
 !data/.gitkeep
 wandb/
 .ipynb_checkpoints/
+*.zip
