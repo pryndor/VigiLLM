@@ -103,19 +103,17 @@ def hf_pipeline(model_id: str):
 
 
 def hf_generate(model_id: str, prompt: str, max_new_tokens: int = 400) -> str:
+    """Plain-text completion, not a chat-template call -- not every biomedical
+    model's tokenizer ships a chat_template, and this needs to work on both."""
     pipe = hf_pipeline(model_id)
-    chat = [{"role": "user", "content": prompt}]
     result = pipe(
-        chat,
+        prompt,
         max_new_tokens=max_new_tokens,
         do_sample=False,
         pad_token_id=pipe.tokenizer.eos_token_id,
+        return_full_text=False,
     )
-    generated = result[0]["generated_text"]
-    # chat-templated pipelines return the full conversation; take the last turn
-    if isinstance(generated, list):
-        return generated[-1]["content"].strip()
-    return generated[len(prompt):].strip()
+    return result[0]["generated_text"].strip()
 
 
 def generate(backend: str, task: str, prompt: str, json_mode: bool = False) -> str:
