@@ -53,8 +53,17 @@ HF_BIOMISTRAL_MODEL = "BioMistral/BioMistral-7B"
 # raises. Without SOME instruct wrapper, an instruct-tuned checkpoint fed raw
 # text doesn't reliably act like an assistant (empty/near-instant-EOS output
 # is the observed failure mode). Reconstruct Llama-3's own template by hand.
+# No leading <|begin_of_text|> here -- the pipeline's tokenizer already
+# auto-prepends the real BOS token (add_special_tokens defaults to True), so
+# including it literally in the string doubled up the BOS and was observed to
+# collapse every generation to the same generic "conditional" answer
+# regardless of case content. System turn added since Llama-3-Instruct's
+# behavior leans on one being present, not just a bare user turn.
 LLAMA3_CHAT_WRAPPER = (
-    "<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\n{prompt}"
+    "<|start_header_id|>system<|end_header_id|>\n\n"
+    "You are a pharmacovigilance expert. Base your answer only on the "
+    "information given in the user's message.<|eot_id|>"
+    "<|start_header_id|>user<|end_header_id|>\n\n{prompt}"
     "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
 )
 
