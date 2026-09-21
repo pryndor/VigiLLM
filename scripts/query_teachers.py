@@ -262,8 +262,8 @@ def main():
                     else:
                         flagged_f.write(json.dumps(record) + "\n")
                         n_flagged += 1
-                print(f"[{i+1}/{len(scenarios)}] {report_id} causality={'ok' if result else 'PARSE_FAIL'} "
-                      f"({time.time()-t0:.1f}s)")
+                detail = f"model={result['category']} rule={rule_category}" if result else "PARSE_FAIL"
+                print(f"[{i+1}/{len(scenarios)}] {report_id} causality={detail} ({time.time()-t0:.1f}s)")
 
             if not args.skip_narrative:
                 t0 = time.time()
