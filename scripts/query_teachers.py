@@ -67,15 +67,42 @@ LLAMA3_CHAT_WRAPPER = (
     "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
 )
 
-CAUSALITY_PROMPT = """You are a pharmacovigilance expert applying the WHO-UMC system for standardised case causality assessment.
+# A Kaggle run of 20 scenarios found the model answering "possible" ~half the
+# time regardless of case content, and 1-in-4 causality queries returning the
+# raw prompt text back instead of JSON. A single worked example anchors both
+# the output format and shows the model that dechallenge/rechallenge/
+# confounder fields should actually drive a category away from the default.
+CAUSALITY_EXAMPLE_CASE = {
+    "rechallenge": "positive", "dechallenge": "positive",
+    "concomitant_medications": [],
+    "suspect_drugs": [{"name": "Ibuprofen", "start_date": "2025-01-10", "stop_date": "2025-01-15"}],
+    "adverse_events": [{"term": "Angioedema", "onset_date": "2025-01-12", "outcome": "recovered"}],
+}
+CAUSALITY_EXAMPLE_ANSWER = {
+    "category": "certain",
+    "reasoning": "Positive dechallenge (event resolved on stopping ibuprofen) and positive "
+                 "rechallenge (event recurred on restarting it) give a definitive "
+                 "pharmacological relationship, with no concomitant medications to explain "
+                 "the event otherwise -- WHO-UMC 'certain'.",
+}
 
-Given the structured case data below, assess the causal relationship between the suspect drug and the adverse event(s). Use these six categories: certain, probable, possible, unlikely, conditional, unassessable.
-
-Case data:
-{case_json}
-
-Respond with ONLY a JSON object in this exact form, no other text:
-{{"category": "<one of the six categories>", "reasoning": "<2-4 sentences explaining your assessment against the WHO-UMC criteria>"}}"""
+# Built with plain concatenation, not str.format -- the worked example's own
+# JSON braces would collide with a second .format(case_json=...) pass at call
+# time (KeyError on every literal '{' in the example). CAUSALITY_CASE_MARKER
+# is replaced with str.replace() instead, which doesn't re-parse braces.
+CAUSALITY_CASE_MARKER = "%%CASE_JSON%%"
+CAUSALITY_PROMPT = (
+    "You are a pharmacovigilance expert applying the WHO-UMC system for standardised case causality assessment.\n\n"
+    "Given the structured case data below, assess the causal relationship between the suspect drug and the "
+    "adverse event(s). Use these six categories: certain, probable, possible, unlikely, conditional, unassessable. "
+    "Base the category specifically on the rechallenge, dechallenge, and concomitant_medications fields -- do not "
+    "default to \"possible\" without checking them.\n\n"
+    "Example case:\n" + json.dumps(CAUSALITY_EXAMPLE_CASE, indent=2) + "\n\n"
+    "Example response:\n" + json.dumps(CAUSALITY_EXAMPLE_ANSWER, indent=2) + "\n\n"
+    "Now assess this case:\n" + CAUSALITY_CASE_MARKER + "\n\n"
+    "Respond with ONLY a JSON object in this exact form, no other text:\n"
+    '{"category": "<one of the six categories>", "reasoning": "<2-4 sentences explaining your assessment against the WHO-UMC criteria>"}'
+)
 
 NARRATIVE_PROMPT = """You are a clinical documentation specialist. Write a concise clinical case narrative (3-6 sentences) describing this adverse drug event case, in the style of a case report or ICSR narrative. Use natural clinical prose, not a list.
 
@@ -121,21 +148,27 @@ def hf_pipeline(model_id: str):
     return pipe
 
 
-def hf_generate(model_id: str, prompt: str, max_new_tokens: int = 400) -> str:
+def hf_generate(model_id: str, prompt: str, max_new_tokens: int = 400, sample: bool = False) -> str:
     """Both teachers are instruct-tuned -- feeding them a raw completion prompt
     (no chat_template) makes them behave nothing like their assistant-trained
     selves (near-instant EOS, empty/garbage output). Use the tokenizer's own
     chat_template when it has one (BioMistral does); OpenBioLLM's tokenizer
-    doesn't ship one, so fall back to plain-text completion only for it."""
+    doesn't ship one, so fall back to plain-text completion only for it.
+
+    sample=True switches greedy (do_sample=False) to temperature sampling --
+    used as a one-shot retry when greedy decoding degenerates into echoing
+    the prompt back (observed on ~25% of causality queries), since retrying
+    the same greedy call just reproduces the same dead-end output."""
     pipe = hf_pipeline(model_id)
+    gen_kwargs = {"do_sample": True, "temperature": 0.7, "top_p": 0.9} if sample else {"do_sample": False}
     has_chat_template = getattr(pipe.tokenizer, "chat_template", None) is not None
     if has_chat_template:
         chat = [{"role": "user", "content": prompt}]
         result = pipe(
             chat,
             max_new_tokens=max_new_tokens,
-            do_sample=False,
             pad_token_id=pipe.tokenizer.eos_token_id,
+            **gen_kwargs,
         )
         generated = result[0]["generated_text"]
         return generated[-1]["content"].strip()
@@ -143,9 +176,9 @@ def hf_generate(model_id: str, prompt: str, max_new_tokens: int = 400) -> str:
     result = pipe(
         text_in,
         max_new_tokens=max_new_tokens,
-        do_sample=False,
         pad_token_id=pipe.tokenizer.eos_token_id,
         return_full_text=False,
+        **gen_kwargs,
     )
     out = result[0]["generated_text"]
     # model wasn't trained to stop on plain eos when wrapped this way -- cut
@@ -154,12 +187,12 @@ def hf_generate(model_id: str, prompt: str, max_new_tokens: int = 400) -> str:
     return out.strip()
 
 
-def generate(backend: str, task: str, prompt: str, json_mode: bool = False) -> str:
+def generate(backend: str, task: str, prompt: str, json_mode: bool = False, sample: bool = False) -> str:
     if backend == "ollama":
         model = OLLAMA_OPENBIOLLM_MODEL if task == "causality" else OLLAMA_BIOMISTRAL_MODEL
         return ollama_generate(model, prompt, json_mode=json_mode)
     model = HF_OPENBIOLLM_MODEL if task == "causality" else HF_BIOMISTRAL_MODEL
-    return hf_generate(model, prompt)
+    return hf_generate(model, prompt, sample=sample)
 
 
 def case_for_prompt(scenario: dict) -> dict:
@@ -172,13 +205,20 @@ def case_for_prompt(scenario: dict) -> dict:
 
 
 def query_causality(scenario: dict, backend: str) -> dict | None:
-    prompt = CAUSALITY_PROMPT.format(case_json=json.dumps(case_for_prompt(scenario), indent=2))
+    prompt = CAUSALITY_PROMPT.replace(CAUSALITY_CASE_MARKER, json.dumps(case_for_prompt(scenario), indent=2))
     raw = generate(backend, "causality", prompt, json_mode=True)
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError:
-        print(f"    raw causality output ({len(raw)} chars): {raw[:300]!r}")
-        return None
+        # Greedy decoding sometimes degenerates into echoing the prompt back
+        # verbatim instead of JSON; retrying the identical greedy call just
+        # reproduces that, so retry once with sampling before giving up.
+        raw = generate(backend, "causality", prompt, json_mode=True, sample=True)
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError:
+            print(f"    raw causality output ({len(raw)} chars): {raw[:300]!r}")
+            return None
     category = parsed.get("category", "").strip().lower()
     if category not in VALID_CATEGORIES:
         print(f"    raw causality output ({len(raw)} chars): {raw[:300]!r}")
