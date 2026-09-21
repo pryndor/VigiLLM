@@ -48,6 +48,16 @@ OLLAMA_BIOMISTRAL_MODEL = "cniongolo/biomistral"
 HF_OPENBIOLLM_MODEL = "aaditya/Llama3-OpenBioLLM-8B"
 HF_BIOMISTRAL_MODEL = "BioMistral/BioMistral-7B"
 
+# OpenBioLLM-8B is fine-tuned from Meta-Llama-3-8B-Instruct but its uploaded
+# tokenizer config carries no chat_template, so tokenizer.apply_chat_template
+# raises. Without SOME instruct wrapper, an instruct-tuned checkpoint fed raw
+# text doesn't reliably act like an assistant (empty/near-instant-EOS output
+# is the observed failure mode). Reconstruct Llama-3's own template by hand.
+LLAMA3_CHAT_WRAPPER = (
+    "<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\n{prompt}"
+    "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n"
+)
+
 CAUSALITY_PROMPT = """You are a pharmacovigilance expert applying the WHO-UMC system for standardised case causality assessment.
 
 Given the structured case data below, assess the causal relationship between the suspect drug and the adverse event(s). Use these six categories: certain, probable, possible, unlikely, conditional, unassessable.
@@ -103,17 +113,36 @@ def hf_pipeline(model_id: str):
 
 
 def hf_generate(model_id: str, prompt: str, max_new_tokens: int = 400) -> str:
-    """Plain-text completion, not a chat-template call -- not every biomedical
-    model's tokenizer ships a chat_template, and this needs to work on both."""
+    """Both teachers are instruct-tuned -- feeding them a raw completion prompt
+    (no chat_template) makes them behave nothing like their assistant-trained
+    selves (near-instant EOS, empty/garbage output). Use the tokenizer's own
+    chat_template when it has one (BioMistral does); OpenBioLLM's tokenizer
+    doesn't ship one, so fall back to plain-text completion only for it."""
     pipe = hf_pipeline(model_id)
+    has_chat_template = getattr(pipe.tokenizer, "chat_template", None) is not None
+    if has_chat_template:
+        chat = [{"role": "user", "content": prompt}]
+        result = pipe(
+            chat,
+            max_new_tokens=max_new_tokens,
+            do_sample=False,
+            pad_token_id=pipe.tokenizer.eos_token_id,
+        )
+        generated = result[0]["generated_text"]
+        return generated[-1]["content"].strip()
+    text_in = LLAMA3_CHAT_WRAPPER.format(prompt=prompt) if "Llama3" in model_id else prompt
     result = pipe(
-        prompt,
+        text_in,
         max_new_tokens=max_new_tokens,
         do_sample=False,
         pad_token_id=pipe.tokenizer.eos_token_id,
         return_full_text=False,
     )
-    return result[0]["generated_text"].strip()
+    out = result[0]["generated_text"]
+    # model wasn't trained to stop on plain eos when wrapped this way -- cut
+    # at the turn-end marker if it appears rather than trusting max_new_tokens.
+    out = out.split("<|eot_id|>")[0]
+    return out.strip()
 
 
 def generate(backend: str, task: str, prompt: str, json_mode: bool = False) -> str:
@@ -139,9 +168,11 @@ def query_causality(scenario: dict, backend: str) -> dict | None:
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError:
+        print(f"    raw causality output ({len(raw)} chars): {raw[:300]!r}")
         return None
     category = parsed.get("category", "").strip().lower()
     if category not in VALID_CATEGORIES:
+        print(f"    raw causality output ({len(raw)} chars): {raw[:300]!r}")
         return None
     return {"category": category, "reasoning": parsed.get("reasoning", "")}
 
@@ -165,7 +196,10 @@ def is_valid_narrative(text: str) -> bool:
 def query_narrative(scenario: dict, backend: str) -> str | None:
     prompt = NARRATIVE_PROMPT.format(case_json=json.dumps(case_for_prompt(scenario), indent=2))
     text = generate(backend, "narrative", prompt, json_mode=False).strip()
-    return text if is_valid_narrative(text) else None
+    if not is_valid_narrative(text):
+        print(f"    raw narrative output ({len(text)} chars): {text[:300]!r}")
+        return None
+    return text
 
 
 def main():
